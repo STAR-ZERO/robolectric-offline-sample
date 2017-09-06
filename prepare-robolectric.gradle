@@ -1,0 +1,29 @@
+def robolectricDependenciesFolder = project.rootDir.path + "/.robolectric-dependencies"
+
+configurations.create('robolectricRuntime')
+
+dependencies {
+    robolectricRuntime "org.robolectric:android-all:o-preview-4-robolectric-0"
+}
+
+rootProject.task(type: Copy, overwrite: true, "downloadRobolectricDependencies") {
+    from configurations.robolectricRuntime
+    into robolectricDependenciesFolder
+}
+
+project.afterEvaluate {
+    tasks.all {
+        if (it.name.startsWith("test")) {
+            it.dependsOn(rootProject.tasks.findByName("downloadRobolectricDependencies"))
+        }
+    }
+}
+
+android {
+    testOptions {
+        unitTests.all {
+            systemProperty 'robolectric.offline', 'true'
+            systemProperty 'robolectric.dependency.dir', robolectricDependenciesFolder
+        }
+    }
+}

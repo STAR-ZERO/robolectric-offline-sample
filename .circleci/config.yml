@@ -1,0 +1,37 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/code
+    docker:
+      - image: circleci/android:api-26-alpha
+    environment:
+      JVM_OPTS: -Xmx3200m
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+      - restore_cache:
+          key: jars-{{ checksum "prepare-robolectric.gradle"}}
+
+      - run:
+          name: Download Dependencies
+          command: ./gradlew androidDependencies
+      - run:
+          name: Download Robolectric Dependencies
+          command: ./gradlew downloadRobolectricDependencies
+
+      - save_cache:
+          paths:
+            - ~/.gradle
+          key: jars-{{ checksum "build.gradle" }}-{{ checksum  "app/build.gradle" }}
+      - save_cache:
+          paths:
+            - .robolectric-dependencies
+          key: jars-{{ checksum "prepare-robolectric.gradle"}}
+
+      - run:
+          name: Run Tests
+          command: ./gradlew testDebug
+      - store_test_results:
+          path: app/build/test-results
